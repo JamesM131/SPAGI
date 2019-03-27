@@ -11,7 +11,7 @@
 #' @keywords datasets
 #'
 #' @examples
-#' head(summary(pathway.path)
+#' head(summary(pathway.path))
 "pathway.path"
 
 
