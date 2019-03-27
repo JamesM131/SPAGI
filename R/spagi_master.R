@@ -12,22 +12,21 @@
 #'
 #' @examples
 #' ## Do a sample analysis using human ocular lens epithelial cell (LEC) RNA-seq gene expression data.
-#'
+#' 
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#'
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
-#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' ## Get active pathway ranking metric (i.e., activity score and number of downstream transcription factors)
-#' ROR1.active.pathway.ranking.metric<-get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' ROR1.active.pathway.ranking.metric <- get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
 #' ## Plot the ranking metric result (i.e., activity score and number of downstream transcription factors) in a 2D plane
 #' display_pathway_ranking_metric(pathway.ranking.metric = ROR1.active.pathway.ranking.metric)
 #' ## To separate the top ranked pathways we can do this
-#' abline(v=45, h=0.2, lty=2, col="black")
-#'
+#' abline(v = 45, h = 0.2, lty = 2, col = "black")
 NULL
 ########################################################################################
 
@@ -99,14 +98,13 @@ NULL
 #' @export
 #'
 #' @examples
-#' dd<-matrix(sample(1:10, 30, replace=TRUE), 10, 3)
-#' rownames(dd)<-c("CRYAA", "CRYAB", "CRYBB3", "PAX6", "SOX2", "PROX1", "SIX3", "CRIM1", "CRYBB2", "BMP7")
+#' dd <- matrix(sample(1:10, 30, replace = TRUE), 10, 3)
+#' rownames(dd) <- c("CRYAA", "CRYAB", "CRYBB3", "PAX6", "SOX2", "PROX1", "SIX3", "CRIM1", "CRYBB2", "BMP7")
 #' compute_mean(dd)
-#'
-
-compute_mean <- function(data.matrix){
-  if((is.vector(data.matrix)==TRUE) || (ncol(data.matrix)<2))
-    data.matrix<-cbind(val1=data.matrix,vall2=data.matrix)
+compute_mean <- function(data.matrix) {
+  if ((is.vector(data.matrix) == TRUE) || (ncol(data.matrix) < 2)) {
+    data.matrix <- cbind(val1 = data.matrix, vall2 = data.matrix)
+  }
   return(rowMeans(data.matrix))
 }
 ################################################################################################
@@ -141,45 +139,43 @@ compute_mean <- function(data.matrix){
 #' @export
 #'
 #' @examples
-#' mm<-matrix(sample(1:10, 100, replace=TRUE),10,10)
-#' rownames(mm)<-c("CRYAA", "CRYAB", "CRYBB3", "PAX6", "SOX2", "PROX1", "SIX3", "CRIM1", "CRYBB2", "BMP7")
-#' colnames(mm)<-c("cell2", "cell3", "cell1", "cell2", "cell1", "cell3", "cell3", "cell2", "cell3", "cell1")
+#' mm <- matrix(sample(1:10, 100, replace = TRUE), 10, 10)
+#' rownames(mm) <- c("CRYAA", "CRYAB", "CRYBB3", "PAX6", "SOX2", "PROX1", "SIX3", "CRIM1", "CRYBB2", "BMP7")
+#' colnames(mm) <- c("cell2", "cell3", "cell1", "cell2", "cell1", "cell3", "cell3", "cell2", "cell3", "cell1")
 #' format_matrix_data(mm)
-#'
+format_matrix_data <- function(matrix.data, experiment.descriptor = colnames(matrix.data)) {
+  colnames(matrix.data) <- experiment.descriptor
 
-format_matrix_data<-function(matrix.data, experiment.descriptor = colnames(matrix.data)){
-  colnames(matrix.data)<-experiment.descriptor
+  # sorting the matrix data sets according to the column names
+  ordered.column.names <- colnames(matrix.data)[order(colnames(matrix.data))]
+  matrix.data.ordered <- matrix.data[, order(colnames(matrix.data))]
+  colnames(matrix.data.ordered) <- ordered.column.names
 
-  #sorting the matrix data sets according to the column names
-  ordered.column.names<-colnames(matrix.data)[order(colnames(matrix.data))]
-  matrix.data.ordered<-matrix.data[,order(colnames(matrix.data))]
-  colnames(matrix.data.ordered)<-ordered.column.names
-
-  repCellTissue=table(colnames(matrix.data.ordered))
-  nCellTissue<-length(repCellTissue)
-  nameCellTissue<-names(repCellTissue)
+  repCellTissue <- table(colnames(matrix.data.ordered))
+  nCellTissue <- length(repCellTissue)
+  nameCellTissue <- names(repCellTissue)
 
 
-  #processing the matrix data to make a new matrix with number of rows same as before, but
-  #number of columns equal to the number of cells/tissues by calculating the average value of the replicates
-  if(ncol(matrix.data.ordered)==nCellTissue){
-    f.mat<-matrix.data.ordered  #here each cell/tissue has only 1 replicate, with existing cell names
+  # processing the matrix data to make a new matrix with number of rows same as before, but
+  # number of columns equal to the number of cells/tissues by calculating the average value of the replicates
+  if (ncol(matrix.data.ordered) == nCellTissue) {
+    f.mat <- matrix.data.ordered # here each cell/tissue has only 1 replicate, with existing cell names
   }
-  else{                         #here each cell/tissue has one or more replicates
-    f.mat<-matrix(0, nrow=nrow(matrix.data.ordered), ncol=nCellTissue)
-    r<-repCellTissue
-    s<-1
-    e<-r[1]
-    for(i in 1:nCellTissue){
-      mean.data<-compute_mean(matrix.data.ordered[,s:e])
-      f.mat[,i]<-mean.data
-      if(i != nCellTissue){
-        s<-s+r[i]
-        e<-e+r[i+1]
+  else { # here each cell/tissue has one or more replicates
+    f.mat <- matrix(0, nrow = nrow(matrix.data.ordered), ncol = nCellTissue)
+    r <- repCellTissue
+    s <- 1
+    e <- r[1]
+    for (i in 1:nCellTissue) {
+      mean.data <- compute_mean(matrix.data.ordered[, s:e])
+      f.mat[, i] <- mean.data
+      if (i != nCellTissue) {
+        s <- s + r[i]
+        e <- e + r[i + 1]
       }
     }
-    rownames(f.mat)<-rownames(matrix.data.ordered)
-    colnames(f.mat)<-nameCellTissue
+    rownames(f.mat) <- rownames(matrix.data.ordered)
+    colnames(f.mat) <- nameCellTissue
   }
 
   return(f.mat)
@@ -219,49 +215,47 @@ format_matrix_data<-function(matrix.data, experiment.descriptor = colnames(matri
 #' @export
 #'
 #' @examples
-#' query.data<-matrix(sample(1:10, 100, replace=TRUE),10,10)
-#' rownames(query.data)<-c("CRYAA", "CRYAB", "CRYBB3", "PAX6", "SOX2", "PROX1", "SIX3", "CRIM1", "CRYBB2", "BMP7")
-#' colnames(query.data)<-c("cell1", "cell1", "cell1", "cell2", "cell2", "cell2", "cell3", "cell3", "cell3", "cell3")
-#' preprocess_querydata(cell.tissue.data=query.data, exp.cutoff.th=5)
-#'
-
-preprocess_querydata<-function(cell.tissue.data, exp.cutoff.th, species = "hsapiens", data.format = "matrix", experiment.descriptor = NULL){
-  if(data.format=="matrix"){
-    ##to make all genes uppercase for mmusculus as PPI data are all uppercase
-    if(species=="mmusculus"){
-      rownames(cell.tissue.data)<-toupper(rownames(cell.tissue.data))
+#' query.data <- matrix(sample(1:10, 100, replace = TRUE), 10, 10)
+#' rownames(query.data) <- c("CRYAA", "CRYAB", "CRYBB3", "PAX6", "SOX2", "PROX1", "SIX3", "CRIM1", "CRYBB2", "BMP7")
+#' colnames(query.data) <- c("cell1", "cell1", "cell1", "cell2", "cell2", "cell2", "cell3", "cell3", "cell3", "cell3")
+#' preprocess_querydata(cell.tissue.data = query.data, exp.cutoff.th = 5)
+preprocess_querydata <- function(cell.tissue.data, exp.cutoff.th, species = "hsapiens", data.format = "matrix", experiment.descriptor = NULL) {
+  if (data.format == "matrix") {
+    ## to make all genes uppercase for mmusculus as PPI data are all uppercase
+    if (species == "mmusculus") {
+      rownames(cell.tissue.data) <- toupper(rownames(cell.tissue.data))
     }
-    else if(species=="hsapiens"){
-      cell.tissue.data<-cell.tissue.data
+    else if (species == "hsapiens") {
+      cell.tissue.data <- cell.tissue.data
     }
-    else{
+    else {
       print("ERROR: could not support other species at this moment!!")
       return(NULL)
     }
     ##
 
 
-    ##process the query data
-    #calculate average value for each gene based on replicates for each cell type
-    if(is.null(experiment.descriptor)) experiment.descriptor<-colnames(cell.tissue.data)
-    cell.data.formatted<-format_matrix_data(cell.tissue.data, experiment.descriptor)
+    ## process the query data
+    # calculate average value for each gene based on replicates for each cell type
+    if (is.null(experiment.descriptor)) experiment.descriptor <- colnames(cell.tissue.data)
+    cell.data.formatted <- format_matrix_data(cell.tissue.data, experiment.descriptor)
 
-    #get expressed genes for each cell based on cut-off threshold
-    expressed.cell.data<-list()
-    cell.names<-colnames(cell.data.formatted)
-    for(i in 1:ncol(cell.data.formatted)){
-      each.cell.data<-cell.data.formatted[,i]
-      names(each.cell.data)<-rownames(cell.data.formatted)
-      #now get expressed genes based on cut-off value
-      each.cell.exp.data<-each.cell.data[each.cell.data>=exp.cutoff.th]
-      expressed.cell.data[[cell.names[i]]]<-each.cell.exp.data
+    # get expressed genes for each cell based on cut-off threshold
+    expressed.cell.data <- list()
+    cell.names <- colnames(cell.data.formatted)
+    for (i in 1:ncol(cell.data.formatted)) {
+      each.cell.data <- cell.data.formatted[, i]
+      names(each.cell.data) <- rownames(cell.data.formatted)
+      # now get expressed genes based on cut-off value
+      each.cell.exp.data <- each.cell.data[each.cell.data >= exp.cutoff.th]
+      expressed.cell.data[[cell.names[i]]] <- each.cell.exp.data
     }
 
-    #return the list with expressed genes data for each cell
+    # return the list with expressed genes data for each cell
     return(expressed.cell.data)
     ##
   }
-  else{
+  else {
     print("ERROR: could not support other data format at this moment!!")
     return(NULL)
   }
@@ -303,25 +297,23 @@ preprocess_querydata<-function(cell.tissue.data, exp.cutoff.th, species = "hsapi
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#'
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
-#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' head(ROR1.active.pathway$ROR1_LEC$FGFR1)
-#'
-
-identify_active_pathway_path<-function(pathway.path, processed.query.data){
-  ##process separately for each cell or tissue type
-  active_pathway_path<-lapply(processed.query.data, function(each.query.cell.exp.data){
-    ##get the pathway paths in which all elements are expressed in query input data
-    #each.cell.exp.gene.name<-names(each.query.cell.exp.data)
-    each.cell.exp.gene.name<-sort(names(each.query.cell.exp.data))
-    pathway.path.exist<-lapply(pathway.path, function(y){
-      tmp.path.exist<-lapply(y, function(x){
-        #for taking only the path where all molecules are expressed in gene expression data
-        #if(all(unlist(x) %chin% each.cell.exp.gene.name == "TRUE")){
-        if(!(anyNA(chmatch(x, each.cell.exp.gene.name)))){
+identify_active_pathway_path <- function(pathway.path, processed.query.data) {
+  ## process separately for each cell or tissue type
+  active_pathway_path <- lapply(processed.query.data, function(each.query.cell.exp.data) {
+    ## get the pathway paths in which all elements are expressed in query input data
+    # each.cell.exp.gene.name<-names(each.query.cell.exp.data)
+    each.cell.exp.gene.name <- sort(names(each.query.cell.exp.data))
+    pathway.path.exist <- lapply(pathway.path, function(y) {
+      tmp.path.exist <- lapply(y, function(x) {
+        # for taking only the path where all molecules are expressed in gene expression data
+        # if(all(unlist(x) %chin% each.cell.exp.gene.name == "TRUE")){
+        if (!(anyNA(chmatch(x, each.cell.exp.gene.name)))) {
           return(x)
         }
       })
@@ -330,30 +322,30 @@ identify_active_pathway_path<-function(pathway.path, processed.query.data){
     ##
 
 
-    ##take only the existing pathway paths without null paths
-    pathway.path.exist.clean<-lapply(pathway.path.exist, function(x){
+    ## take only the existing pathway paths without null paths
+    pathway.path.exist.clean <- lapply(pathway.path.exist, function(x) {
       return(x[!(sapply(x, is.null))])
     })
     ##
 
 
-    ##take only the pathways that have at least one complete path
-    pathway.path.exist.clean.2<-list()
-    for(i in 1:length(pathway.path.exist.clean)){
-      if(length(pathway.path.exist.clean[[i]])!=0){
-        pathway.path.exist.clean.2[[names(pathway.path.exist.clean)[i]]]<-pathway.path.exist.clean[[i]]
+    ## take only the pathways that have at least one complete path
+    pathway.path.exist.clean.2 <- list()
+    for (i in 1:length(pathway.path.exist.clean)) {
+      if (length(pathway.path.exist.clean[[i]]) != 0) {
+        pathway.path.exist.clean.2[[names(pathway.path.exist.clean)[i]]] <- pathway.path.exist.clean[[i]]
       }
     }
     ##
 
 
-    ##return the active pathway path for each cell or tissue
+    ## return the active pathway path for each cell or tissue
     return(pathway.path.exist.clean.2)
     ##
   })
 
 
-  ##Finally return the whole result for active pathway path of every cell/tissue
+  ## Finally return the whole result for active pathway path of every cell/tissue
   return(active_pathway_path)
   ##
 }
@@ -394,46 +386,44 @@ identify_active_pathway_path<-function(pathway.path, processed.query.data){
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#'
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
-#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' ## Get activity score of the active pathways
-#' ROR1.pathway.activity.score<-get_pathway_activity_score(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' ROR1.pathway.activity.score <- get_pathway_activity_score(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
 #' head(ROR1.pathway.activity.score$ROR1_LEC)
-#'
+get_pathway_activity_score <- function(active.pathway.path, processed.query.data, high.exp.th) {
+  ## process separately each cell/tissue to get active pathway ranking metric
+  pathway.activity.score <- list()
+  for (i in 1:length(active.pathway.path)) {
+    # get each cell/tissue active pathway paths
+    each.cell.active.pathway.path <- active.pathway.path[[i]]
 
-get_pathway_activity_score<-function(active.pathway.path, processed.query.data, high.exp.th){
-  ##process separately each cell/tissue to get active pathway ranking metric
-  pathway.activity.score<-list()
-  for(i in 1:length(active.pathway.path)){
-    #get each cell/tissue active pathway paths
-    each.cell.active.pathway.path<-active.pathway.path[[i]]
+    # take the cell/tissue name from the pathway to get that cell/tissue processed.query.data and high.exp.th
+    tmp.cell.name <- names(active.pathway.path[i])
 
-    #take the cell/tissue name from the pathway to get that cell/tissue processed.query.data and high.exp.th
-    tmp.cell.name<-names(active.pathway.path[i])
+    # take the respective cell/tissue processed data
+    tmp.cell.processed.data <- processed.query.data[[tmp.cell.name]]
 
-    #take the respective cell/tissue processed data
-    tmp.cell.processed.data<-processed.query.data[[tmp.cell.name]]
-
-    ##get the pathway paths average active gene count proportion
-    pathway.path.active.gene.count.proportion<-lapply(each.cell.active.pathway.path, function(y){
-      individual.pathway.active.gene.count<-lapply(y, function(x){
-        #get active (i.e., highly expressed) gene count proportion for each path and return
-        tmp.path.gene.exp<-tmp.cell.processed.data[unlist(x)]
-        tmp.path.active.genes<-names(tmp.path.gene.exp[tmp.path.gene.exp>=high.exp.th])
-        return(length(tmp.path.active.genes)/length(unlist(x)))
+    ## get the pathway paths average active gene count proportion
+    pathway.path.active.gene.count.proportion <- lapply(each.cell.active.pathway.path, function(y) {
+      individual.pathway.active.gene.count <- lapply(y, function(x) {
+        # get active (i.e., highly expressed) gene count proportion for each path and return
+        tmp.path.gene.exp <- tmp.cell.processed.data[unlist(x)]
+        tmp.path.active.genes <- names(tmp.path.gene.exp[tmp.path.gene.exp >= high.exp.th])
+        return(length(tmp.path.active.genes) / length(unlist(x)))
       })
-      #calcaulate average active gene count proportion for each pathway and return
+      # calcaulate average active gene count proportion for each pathway and return
       return(sum(unlist(individual.pathway.active.gene.count)) / length(y))
     })
     ##
 
-    #assign average active gene count proportion for each cell/tissue
-    pathway.activity.score[[tmp.cell.name]]<-unlist(pathway.path.active.gene.count.proportion)
+    # assign average active gene count proportion for each cell/tissue
+    pathway.activity.score[[tmp.cell.name]] <- unlist(pathway.path.active.gene.count.proportion)
   }
-  #return average active gene count proportion for all cell/tissue
+  # return average active gene count proportion for all cell/tissue
   return(pathway.activity.score)
   ##
 }
@@ -448,7 +438,7 @@ get_pathway_activity_score<-function(active.pathway.path, processed.query.data, 
 
 
 ##################################################################################################
-#####get each pathway number of downstream transcription factors for each cell type
+##### get each pathway number of downstream transcription factors for each cell type
 
 #' @title get_pathway_downstream_tf_number
 #'
@@ -471,22 +461,20 @@ get_pathway_activity_score<-function(active.pathway.path, processed.query.data, 
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#'
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
-#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' ## Get the number of downstream transcription factors of the active pathways
-#' ROR1.pathway.downstream.tf.count<-get_pathway_downstream_tf_number(active.pathway.path = ROR1.active.pathway)
+#' ROR1.pathway.downstream.tf.count <- get_pathway_downstream_tf_number(active.pathway.path = ROR1.active.pathway)
 #' head(ROR1.pathway.downstream.tf.count$ROR1_LEC)
-#'
-
-get_pathway_downstream_tf_number<-function(active.pathway.path){
-  ##get each pathway number of downstream transcription factors for each cell type
-  pathway.downstream.tf.count<-lapply(active.pathway.path, function(y){
-    #here, y is each cell type pathway path
-    tmp.downstream.tf.count<-lapply(y, function(x){
-      #here x is each pathway for that cell type
+get_pathway_downstream_tf_number <- function(active.pathway.path) {
+  ## get each pathway number of downstream transcription factors for each cell type
+  pathway.downstream.tf.count <- lapply(active.pathway.path, function(y) {
+    # here, y is each cell type pathway path
+    tmp.downstream.tf.count <- lapply(y, function(x) {
+      # here x is each pathway for that cell type
       return(length(x))
     })
     return(unlist(tmp.downstream.tf.count))
@@ -531,28 +519,26 @@ get_pathway_downstream_tf_number<-function(active.pathway.path){
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#'
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
-#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' ## Get active pathway ranking metric (i.e., activity score and number of downstream transcription factors)
-#' ROR1.active.pathway.ranking.metric<-get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' ROR1.active.pathway.ranking.metric <- get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
 #' head(ROR1.active.pathway.ranking.metric$activity.score$ROR1_LEC)
 #' head(ROR1.active.pathway.ranking.metric$downstream.tf.count$ROR1_LEC)
-#'
+get_pathway_ranking_metric <- function(active.pathway.path, processed.query.data, high.exp.th) {
+  ## First get the activity score of each pathway for each cell/tissue type
+  activity.score <- get_pathway_activity_score(active.pathway.path = active.pathway.path, processed.query.data = processed.query.data, high.exp.th = high.exp.th)
 
-get_pathway_ranking_metric<-function(active.pathway.path, processed.query.data, high.exp.th){
-  ##First get the activity score of each pathway for each cell/tissue type
-  activity.score<-get_pathway_activity_score(active.pathway.path = active.pathway.path, processed.query.data = processed.query.data, high.exp.th = high.exp.th)
+  ## Next get the number of downstream transcription factors of each pathway for each cell/tissue type
+  downstream.tf.count <- get_pathway_downstream_tf_number(active.pathway.path = active.pathway.path)
 
-  ##Next get the number of downstream transcription factors of each pathway for each cell/tissue type
-  downstream.tf.count<-get_pathway_downstream_tf_number(active.pathway.path = active.pathway.path)
-
-  ##Finally combine the above results in a list and return
-  pathway.ranking.metric<-list()
-  pathway.ranking.metric[["activity.score"]]<-activity.score
-  pathway.ranking.metric[["downstream.tf.count"]]<-downstream.tf.count
+  ## Finally combine the above results in a list and return
+  pathway.ranking.metric <- list()
+  pathway.ranking.metric[["activity.score"]] <- activity.score
+  pathway.ranking.metric[["downstream.tf.count"]] <- downstream.tf.count
 
   return(pathway.ranking.metric)
   ##
@@ -591,46 +577,47 @@ get_pathway_ranking_metric<-function(active.pathway.path, processed.query.data, 
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#'
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format.
-#' ROR1.processed.data<-preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
+#' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway<-identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' ## Get active pathway ranking metric (i.e., activity score and number of downstream transcription factors)
-#' ROR1.active.pathway.ranking.metric<-get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
+#' ROR1.active.pathway.ranking.metric <- get_pathway_ranking_metric(active.pathway.path = ROR1.active.pathway, processed.query.data = ROR1.processed.data, high.exp.th = 7)
 #' ## Plot the ranking metric result (i.e., activity score and number of downstream transcription factors) in a 2D plane
 #' display_pathway_ranking_metric(pathway.ranking.metric = ROR1.active.pathway.ranking.metric)
 #' ## To separate the top ranked pathways we can do this
-#' abline(v=45, h=0.2, lty=2, col="black")
-#'
+#' abline(v = 45, h = 0.2, lty = 2, col = "black")
+display_pathway_ranking_metric <- function(pathway.ranking.metric) {
+  # in each loop, the result of one query cell/tissue type is processed and plotted in a 2D plane
+  for (i in 1:length(pathway.ranking.metric$activity.score)) {
+    # get the name of each cell type
+    cell.tissue.names <- names(pathway.ranking.metric$activity.score[i])
 
-display_pathway_ranking_metric<-function(pathway.ranking.metric){
-  #in each loop, the result of one query cell/tissue type is processed and plotted in a 2D plane
-  for(i in 1:length(pathway.ranking.metric$activity.score)){
-    #get the name of each cell type
-    cell.tissue.names<-names(pathway.ranking.metric$activity.score[i])
-
-    ##for setting the title
-    if(nchar(cell.tissue.names)>40){
-      title<-paste("The result of:\n", cell.tissue.names, sep = " ")
+    ## for setting the title
+    if (nchar(cell.tissue.names) > 40) {
+      title <- paste("The result of:\n", cell.tissue.names, sep = " ")
     }
-    else{
-      title<-paste("The result of", cell.tissue.names, sep = " ")
+    else {
+      title <- paste("The result of", cell.tissue.names, sep = " ")
     }
     ##
 
 
-    ##plot the result in a 2D plane - number of downstream TF in x axis and activity score in y axis
+    ## plot the result in a 2D plane - number of downstream TF in x axis and activity score in y axis
     plot(pathway.ranking.metric$downstream.tf.count[[i]], pathway.ranking.metric$activity.score[[i]],
-         xlim = c(0,200), ylim = c(0,1.0), type= "n", bty="n", main = title,
-         xlab = "Number of downstream transcription factor", ylab = "Pathway activity score")
+      xlim = c(0, 200), ylim = c(0, 1.0), type = "n", bty = "n", main = title,
+      xlab = "Number of downstream transcription factor", ylab = "Pathway activity score"
+    )
     text(pathway.ranking.metric$downstream.tf.count[[i]], pathway.ranking.metric$activity.score[[i]],
-         names(pathway.ranking.metric$downstream.tf.count[[i]]), cex = 0.5, col ="black")
+      names(pathway.ranking.metric$downstream.tf.count[[i]]),
+      cex = 0.5, col = "black"
+    )
     ##
 
 
-    #for console message for each cell/tissue type ploting
-    consol.msg<-paste(cell.tissue.names, "-- result plotting done!!", sep = " ")
+    # for console message for each cell/tissue type ploting
+    consol.msg <- paste(cell.tissue.names, "-- result plotting done!!", sep = " ")
     print(consol.msg)
   }
 }
@@ -646,8 +633,8 @@ display_pathway_ranking_metric<-function(pathway.ranking.metric){
 
 
 ##################################################################################################
-#############Need two folder for downloading stringdb files for each species - stringdb_mouse, stringdb_human
-#############It takes some time to download the data, and then can reuse the downloaded data
+############# Need two folder for downloading stringdb files for each species - stringdb_mouse, stringdb_human
+############# It takes some time to download the data, and then can reuse the downloaded data
 
 #' @title get_ppi_for_molecules
 #'
@@ -677,114 +664,112 @@ display_pathway_ranking_metric<-function(pathway.ranking.metric){
 #' ## It takes some time to download the data, and then can reuse the downloaded data.
 #' ## Here we will use RP.protein, KN.protein, TF.protein protein parameters. These data are automatically loaded with the package. You can modify these parameters.
 #' ## And we will use the species as "mmusculus".
-#'
+#' 
 #' ## Get PPI data for the protein molecules of species "mmusculus".
-#' mm.ppi<-get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species="mmusculus")
+#' mm.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "mmusculus")
 #' head(mm.ppi)
-#'
-
-get_ppi_for_molecules<-function(RP.protein, KN.protein, TF.protein, species, score=700){
-  ##get ppi interactions for molecules
-  if(species=="mmusculus"){
-    #initiate the connection, id  10090 for mouse
-    string_db_mouse <- STRINGdb$new(version="10", species=10090, score_threshold=0, input_directory="stringdb_mouse" )
-    #now combine all the protein
-    all.protein<-unique(c(RP.protein, KN.protein, TF.protein))
-    #make a data frame from all the protein
-    all.protein.df<-data.frame("gene"=all.protein)
-    #mapping gene names to string ids
+get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species, score = 700) {
+  ## get ppi interactions for molecules
+  if (species == "mmusculus") {
+    # initiate the connection, id  10090 for mouse
+    string_db_mouse <- STRINGdb$new(version = "10", species = 10090, score_threshold = 0, input_directory = "stringdb_mouse")
+    # now combine all the protein
+    all.protein <- unique(c(RP.protein, KN.protein, TF.protein))
+    # make a data frame from all the protein
+    all.protein.df <- data.frame("gene" = all.protein)
+    # mapping gene names to string ids
     all.protein.mapped <- string_db_mouse$map(all.protein.df, "gene", takeFirst = T, removeUnmappedRows = TRUE)
-    #get interactions information
-    all.protein.mapped.interactions<-string_db_mouse$get_interactions(all.protein.mapped$STRING_id)
-    #get only interactions and score
-    all.protein.mapped.interactions.score<-all.protein.mapped.interactions[,c(1,2,16)]
+    # get interactions information
+    all.protein.mapped.interactions <- string_db_mouse$get_interactions(all.protein.mapped$STRING_id)
+    # get only interactions and score
+    all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
   }
-  else if(species=="hsapiens"){
-    #initiate the connection, id  9606 for human
-    string_db_human <- STRINGdb$new(version="10", species=9606, score_threshold=0, input_directory="stringdb_human" )
-    #now combine all the protein and make uppercase
-    all.protein<-toupper(unique(c(RP.protein, KN.protein, TF.protein)))
-    #make a data frame from all the protein
-    all.protein.df<-data.frame("gene"=all.protein)
-    #mapping gene names to string ids
+  else if (species == "hsapiens") {
+    # initiate the connection, id  9606 for human
+    string_db_human <- STRINGdb$new(version = "10", species = 9606, score_threshold = 0, input_directory = "stringdb_human")
+    # now combine all the protein and make uppercase
+    all.protein <- toupper(unique(c(RP.protein, KN.protein, TF.protein)))
+    # make a data frame from all the protein
+    all.protein.df <- data.frame("gene" = all.protein)
+    # mapping gene names to string ids
     all.protein.mapped <- string_db_human$map(all.protein.df, "gene", takeFirst = T, removeUnmappedRows = TRUE)
-    #get interactions information
-    all.protein.mapped.interactions<-string_db_human$get_interactions(all.protein.mapped$STRING_id)
-    #get only interactions and score
-    all.protein.mapped.interactions.score<-all.protein.mapped.interactions[,c(1,2,16)]
+    # get interactions information
+    all.protein.mapped.interactions <- string_db_human$get_interactions(all.protein.mapped$STRING_id)
+    # get only interactions and score
+    all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
   }
-  else{
+  else {
     print("ERROR: Do not support other species at this moment.")
     return(NULL)
   }
   ##
 
 
-  ##from STRING_id to gene name conversion
-  all.factor.M<-all.protein.mapped.interactions.score
-  all.factor.N<-all.protein.mapped
-  all.factor.M[,1]<-all.factor.N[match(all.factor.M$from, all.factor.N$STRING_id),1]
-  all.factor.M[,2]<-all.factor.N[match(all.factor.M$to, all.factor.N$STRING_id),1]
-  all.factor.PPI<-all.factor.M
+  ## from STRING_id to gene name conversion
+  all.factor.M <- all.protein.mapped.interactions.score
+  all.factor.N <- all.protein.mapped
+  all.factor.M[, 1] <- all.factor.N[match(all.factor.M$from, all.factor.N$STRING_id), 1]
+  all.factor.M[, 2] <- all.factor.N[match(all.factor.M$to, all.factor.N$STRING_id), 1]
+  all.factor.PPI <- all.factor.M
   ##
 
 
-  ##get only the significant interactions, here by default combined score >= 700
-  all.factor.PPI.significant<-all.factor.PPI[all.factor.PPI$combined_score>=score,]
+  ## get only the significant interactions, here by default combined score >= 700
+  all.factor.PPI.significant <- all.factor.PPI[all.factor.PPI$combined_score >= score, ]
   ##
 
 
 
-  #########To get all interactions without considering the directions
-  #########Here, we will take the highest score value for duplicates
-  ##1st get the original interactions
-  all.ppi.sig.1<-all.factor.PPI.significant
-  rownames(all.ppi.sig.1)<-NULL
+  ######### To get all interactions without considering the directions
+  ######### Here, we will take the highest score value for duplicates
+  ## 1st get the original interactions
+  all.ppi.sig.1 <- all.factor.PPI.significant
+  rownames(all.ppi.sig.1) <- NULL
   ##
 
 
   #####
-  ##combine the neighboring factors to treat as a single vector - original order
-  comb.ppi.1<-list()
-  for(i in 1:nrow(all.ppi.sig.1)){
-    comb.ppi.1[[i]]<-paste(all.ppi.sig.1[i,1], all.ppi.sig.1[i,2], sep="*")
+  ## combine the neighboring factors to treat as a single vector - original order
+  comb.ppi.1 <- list()
+  for (i in 1:nrow(all.ppi.sig.1)) {
+    comb.ppi.1[[i]] <- paste(all.ppi.sig.1[i, 1], all.ppi.sig.1[i, 2], sep = "*")
   }
   ##
 
-  ##make the first df (original order) with the combined_score
-  comb.ppi.1.df<-data.frame("interaction"=unlist(comb.ppi.1), "score"=all.ppi.sig.1$combined_score)
+  ## make the first df (original order) with the combined_score
+  comb.ppi.1.df <- data.frame("interaction" = unlist(comb.ppi.1), "score" = all.ppi.sig.1$combined_score)
   ##
   #####
 
 
   #####
-  ##combine the neighboring factors to treat as a single vector - reverse order
-  comb.ppi.2<-list()
-  for(j in 1:nrow(all.ppi.sig.1)){
-    comb.ppi.2[[j]]<-paste(all.ppi.sig.1[j,2], all.ppi.sig.1[j,1], sep="*")
+  ## combine the neighboring factors to treat as a single vector - reverse order
+  comb.ppi.2 <- list()
+  for (j in 1:nrow(all.ppi.sig.1)) {
+    comb.ppi.2[[j]] <- paste(all.ppi.sig.1[j, 2], all.ppi.sig.1[j, 1], sep = "*")
   }
   ##
 
-  ##make the second df (reverse order) with the combined_score
-  comb.ppi.2.df<-data.frame("interaction"=unlist(comb.ppi.2), "score"=all.ppi.sig.1$combined_score)
+  ## make the second df (reverse order) with the combined_score
+  comb.ppi.2.df <- data.frame("interaction" = unlist(comb.ppi.2), "score" = all.ppi.sig.1$combined_score)
   ##
   #####
 
 
-  ##Now add both the interactions' data frame - original order and reverse order
-  comb.ppi.df<-rbind(comb.ppi.1.df, comb.ppi.2.df)
+  ## Now add both the interactions' data frame - original order and reverse order
+  comb.ppi.df <- rbind(comb.ppi.1.df, comb.ppi.2.df)
   ##
 
-  ##order according to the score value - highest to lowest
-  comb.ppi.df.ordered<-comb.ppi.df[order(comb.ppi.df$score, decreasing = T),]
+  ## order according to the score value - highest to lowest
+  comb.ppi.df.ordered <- comb.ppi.df[order(comb.ppi.df$score, decreasing = T), ]
   ##
 
-  ##take PPIs with the highest score valued unique one from the duplicates
-  comb.ppi.df.ordered.unique <- comb.ppi.df.ordered[!duplicated(comb.ppi.df.ordered$interaction),]
-  rownames(comb.ppi.df.ordered.unique)<-NULL
+  ## take PPIs with the highest score valued unique one from the duplicates
+  comb.ppi.df.ordered.unique <- comb.ppi.df.ordered[!duplicated(comb.ppi.df.ordered$interaction), ]
+  rownames(comb.ppi.df.ordered.unique) <- NULL
   ##
 
-  ##Finally return the combined PPI data frame with score value
+  ## Finally return the combined PPI data frame with score value
   return(comb.ppi.df.ordered.unique)
   ##
   ##########
@@ -799,8 +784,8 @@ get_ppi_for_molecules<-function(RP.protein, KN.protein, TF.protein, species, sco
 
 
 #########################################################################################
-###############Function for combining both mm.ppi and hs.ppi#############################
-##########Also to get filtered PPI (RP-RP-KN-...-KN-TF) and their list of RPs and TFs####
+############### Function for combining both mm.ppi and hs.ppi#############################
+########## Also to get filtered PPI (RP-RP-KN-...-KN-TF) and their list of RPs and TFs####
 
 #' @title combine_mm_hs_ppi
 #'
@@ -829,98 +814,102 @@ get_ppi_for_molecules<-function(RP.protein, KN.protein, TF.protein, species, sco
 #' ## Here we will use RP.protein, KN.protein, TF.protein protein parameters. These data are automatically loaded with the package. You can modify these parameters.
 #' ## We will generate PPI data for two species - "mmusculus" and "hsapiens" by calling the function get_ppi_for_molecules two times.
 #' ## Then we will combine these two PPI data sets by using the combine_mm_hs_ppi function that will be used later on to generate the pathway path data.
-#'
+#' 
 #' ## Get PPI data for the protein molecules of species "mmusculus".
-#' mm.ppi<-get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species="mmusculus")
+#' mm.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "mmusculus")
 #' ## Get PPI data for the protein molecules of species "hsapiens".
-#' hs.ppi<-get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species="hsapiens")
+#' hs.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "hsapiens")
 #' ## Now combine and get the filtered PPI and the RP and TF proteins of the combined filtered PPI
-#' comb.ppi.result<-combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
+#' comb.ppi.result <- combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
 #' head(summary(comb.ppi.result))
-#'
-
-combine_mm_hs_ppi<-function(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein){
-  #####combine, order and take the unique PPIs with highest score
-  #Combine the both PPI data
-  comb.ppi<-rbind(mm.ppi, hs.ppi)
-  #order according to the score value - highest to lowest
-  comb.ppi.ordered<-comb.ppi[order(comb.ppi$score, decreasing = T),]
-  #take PPIs with the highest score valued unique one from the duplicates
+combine_mm_hs_ppi <- function(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein) {
+  ##### combine, order and take the unique PPIs with highest score
+  # Combine the both PPI data
+  comb.ppi <- rbind(mm.ppi, hs.ppi)
+  # order according to the score value - highest to lowest
+  comb.ppi.ordered <- comb.ppi[order(comb.ppi$score, decreasing = T), ]
+  # take PPIs with the highest score valued unique one from the duplicates
   comb.ppi.ordered.unique <- comb.ppi.ordered[!duplicated(comb.ppi.ordered$interaction), ]
   #####
 
 
 
   #####
-  #now separating the links using a list that contains all the links as vectors
-  comb.ppi.interaction.split<-lapply(as.vector(comb.ppi.ordered.unique$interaction), function(x) {return(unlist(strsplit(x, split = "[*]")))})
-  #making data frame from the unique split lists
-  comb.ppi.interaction.split.df<-as.data.frame(do.call(rbind, lapply(comb.ppi.interaction.split, rbind)))
-  #set the column names of the data frame
-  colnames(comb.ppi.interaction.split.df)<-c("from", "to")
-  #now add the score value as a 3rd column
-  all.factor.PPI.significant<-data.frame(comb.ppi.interaction.split.df, "score" = as.vector(comb.ppi.ordered.unique$score))
+  # now separating the links using a list that contains all the links as vectors
+  comb.ppi.interaction.split <- lapply(as.vector(comb.ppi.ordered.unique$interaction), function(x) {
+    return(unlist(strsplit(x, split = "[*]")))
+  })
+  # making data frame from the unique split lists
+  comb.ppi.interaction.split.df <- as.data.frame(do.call(rbind, lapply(comb.ppi.interaction.split, rbind)))
+  # set the column names of the data frame
+  colnames(comb.ppi.interaction.split.df) <- c("from", "to")
+  # now add the score value as a 3rd column
+  all.factor.PPI.significant <- data.frame(comb.ppi.interaction.split.df, "score" = as.vector(comb.ppi.ordered.unique$score))
   #####
 
 
 
-  #####First make all protein symbols as uppercase
-  RP.protein<-toupper(RP.protein)
-  KN.protein<-toupper(KN.protein)
-  TF.protein<-toupper(TF.protein)
+  ##### First make all protein symbols as uppercase
+  RP.protein <- toupper(RP.protein)
+  KN.protein <- toupper(KN.protein)
+  TF.protein <- toupper(TF.protein)
   #####
 
 
 
-  #####To get only the significant links exist from RP - KN - TF
-  #####FOr RP - RP, we have allowed maximum of 2 layers according to our design,
-  #####If you need different design you should change in this section according to your design.
-  ##get interactions from RP to KN
-  RP.to.KN.significant.ppi<-all.factor.PPI.significant[((all.factor.PPI.significant$from %in% RP.protein) &
-                                                          (all.factor.PPI.significant$to %in% KN.protein)),]
+  ##### To get only the significant links exist from RP - KN - TF
+  ##### FOr RP - RP, we have allowed maximum of 2 layers according to our design,
+  ##### If you need different design you should change in this section according to your design.
+  ## get interactions from RP to KN
+  RP.to.KN.significant.ppi <- all.factor.PPI.significant[((all.factor.PPI.significant$from %in% RP.protein) &
+    (all.factor.PPI.significant$to %in% KN.protein)), ]
 
-  ##get interactions from KN to KN - for all KNs
-  KN.to.KN.significant.ppi<-all.factor.PPI.significant[((all.factor.PPI.significant$from %in% KN.protein) &
-                                                          (all.factor.PPI.significant$to %in% KN.protein)),]
+  ## get interactions from KN to KN - for all KNs
+  KN.to.KN.significant.ppi <- all.factor.PPI.significant[((all.factor.PPI.significant$from %in% KN.protein) &
+    (all.factor.PPI.significant$to %in% KN.protein)), ]
 
-  ##get interactions from KN to TF - for all KNs
-  KN.to.TF.significant.ppi<-all.factor.PPI.significant[((all.factor.PPI.significant$from %in% KN.protein) &
-                                                          (all.factor.PPI.significant$to %in% TF.protein)),]
+  ## get interactions from KN to TF - for all KNs
+  KN.to.TF.significant.ppi <- all.factor.PPI.significant[((all.factor.PPI.significant$from %in% KN.protein) &
+    (all.factor.PPI.significant$to %in% TF.protein)), ]
 
-  ##get the RPs that have no direct interaction with the KNs
-  RP.not.connected.with.KN<-setdiff(RP.protein, unique(RP.to.KN.significant.ppi$from))
+  ## get the RPs that have no direct interaction with the KNs
+  RP.not.connected.with.KN <- setdiff(RP.protein, unique(RP.to.KN.significant.ppi$from))
 
-  ##get the ppi from 'RP.not.connected.with.KN' to 'unique(RP.to.KN.significant.ppi$from)'
-  #this will give us interaction for 2 RP layers
-  #get interactions from from RP not connected with KN to RP connected with KN
-  #these combined RPs will act as source to finding the paths
-  RP.to.RP.significant.ppi<-all.factor.PPI.significant[((all.factor.PPI.significant$from %in% RP.not.connected.with.KN) &
-                                                          (all.factor.PPI.significant$to %in% unique(RP.to.KN.significant.ppi$from))),]
+  ## get the ppi from 'RP.not.connected.with.KN' to 'unique(RP.to.KN.significant.ppi$from)'
+  # this will give us interaction for 2 RP layers
+  # get interactions from from RP not connected with KN to RP connected with KN
+  # these combined RPs will act as source to finding the paths
+  RP.to.RP.significant.ppi <- all.factor.PPI.significant[((all.factor.PPI.significant$from %in% RP.not.connected.with.KN) &
+    (all.factor.PPI.significant$to %in% unique(RP.to.KN.significant.ppi$from))), ]
 
-  ##And finally combine all the interactions from RP-RP-KN-...-KN-TF
-  all.significant.filtered.ppi<-rbind(RP.to.RP.significant.ppi, RP.to.KN.significant.ppi,
-                                      KN.to.KN.significant.ppi, KN.to.TF.significant.ppi)
-  rownames(all.significant.filtered.ppi)<-NULL
-  #####
-
-
-
-  #####
-  ##Now get the RP and TF of the interactions
-  RPs<-unique(c(unique(as.vector(RP.to.RP.significant.ppi$from)),
-                unique(as.vector(RP.to.KN.significant.ppi$from))))
-
-  TFs<-unique(as.vector(KN.to.TF.significant.ppi$to))
+  ## And finally combine all the interactions from RP-RP-KN-...-KN-TF
+  all.significant.filtered.ppi <- rbind(
+    RP.to.RP.significant.ppi, RP.to.KN.significant.ppi,
+    KN.to.KN.significant.ppi, KN.to.TF.significant.ppi
+  )
+  rownames(all.significant.filtered.ppi) <- NULL
   #####
 
 
 
   #####
-  ##Finally make a list of all.significant.filtered.ppi, RPs and TFs and then return
-  comb.ppi.result<-list()
-  comb.ppi.result[["PPI"]]<-all.significant.filtered.ppi
-  comb.ppi.result[["RPs"]]<-RPs
-  comb.ppi.result[["TFs"]]<-TFs
+  ## Now get the RP and TF of the interactions
+  RPs <- unique(c(
+    unique(as.vector(RP.to.RP.significant.ppi$from)),
+    unique(as.vector(RP.to.KN.significant.ppi$from))
+  ))
+
+  TFs <- unique(as.vector(KN.to.TF.significant.ppi$to))
+  #####
+
+
+
+  #####
+  ## Finally make a list of all.significant.filtered.ppi, RPs and TFs and then return
+  comb.ppi.result <- list()
+  comb.ppi.result[["PPI"]] <- all.significant.filtered.ppi
+  comb.ppi.result[["RPs"]] <- RPs
+  comb.ppi.result[["TFs"]] <- TFs
   return(comb.ppi.result)
   ##
   #####
@@ -935,7 +924,7 @@ combine_mm_hs_ppi<-function(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein){
 
 
 ##############################################################################################
-#####Here may be you will get some warnings, but these are only for not reachable paths for source to destination
+##### Here may be you will get some warnings, but these are only for not reachable paths for source to destination
 
 #' @title generate_pathway_path
 #'
@@ -965,131 +954,128 @@ combine_mm_hs_ppi<-function(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein){
 #' ## We will generate PPI data for two species - "mmusculus" and "hsapiens" by calling the function get_ppi_for_molecules two times.
 #' ## Then we will combine these two PPI data sets by using the combine_mm_hs_ppi function that will be used to generate the pathway path data.
 #' ## Finally we will generate the pathway path data using the combined PPI data
-#'
+#' 
 #' ## Get PPI data for the protein molecules of species "mmusculus".
-#' mm.ppi<-get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species="mmusculus")
+#' mm.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "mmusculus")
 #' ## Get PPI data for the protein molecules of species "hsapiens".
-#' hs.ppi<-get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species="hsapiens")
+#' hs.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "hsapiens")
 #' ## Now combine and get the filtered PPI and the RP and TF proteins of the combined filtered PPI
-#' comb.ppi.result<-combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
-#' ##Generate the pathway path data using the comb.ppi.result and housekeeping.gene data sets
-#' pathway.path<-generate_pathway_path(ppi.result=comb.ppi.result, housekeeping.gene)
+#' comb.ppi.result <- combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
+#' ## Generate the pathway path data using the comb.ppi.result and housekeeping.gene data sets
+#' pathway.path <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene)
 #' head(summary(pathway.path))
-#'
-
-generate_pathway_path<-function(ppi.result, housekeeping.gene, max.path.length=7){
-  #####preprocess the ppi.result data
-  ##Assign the result data to the objects
-  all.significant.filtered.ppi<-ppi.result$PPI
-  RPs<-ppi.result$RPs
-  TFs<-ppi.result$TFs
+generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length = 7) {
+  ##### preprocess the ppi.result data
+  ## Assign the result data to the objects
+  all.significant.filtered.ppi <- ppi.result$PPI
+  RPs <- ppi.result$RPs
+  TFs <- ppi.result$TFs
   ##
 
-  ##NOTE
-  ##First, it is good to know that when looking up paths, igraph understands weights as costs,
-  ##i.e. on edges with higher weight it costs more to travel,
-  ##so it will consider shorter the paths with lower sum weight.
-  ##It is easy to turn this into the opposite, here we will do the score (range 0 to 999) as weight by 1000-score.
+  ## NOTE
+  ## First, it is good to know that when looking up paths, igraph understands weights as costs,
+  ## i.e. on edges with higher weight it costs more to travel,
+  ## so it will consider shorter the paths with lower sum weight.
+  ## It is easy to turn this into the opposite, here we will do the score (range 0 to 999) as weight by 1000-score.
 
-  ##First calculate the weight from the score as (1000-score)
-  edge.weight<- 1000 - all.significant.filtered.ppi$score
+  ## First calculate the weight from the score as (1000-score)
+  edge.weight <- 1000 - all.significant.filtered.ppi$score
   ##
 
-  ##Now, add the weight column to the data frame
-  all.edges<-data.frame(all.significant.filtered.ppi[,1:2], "weight"=edge.weight)
-  #make the rownames null
-  rownames(all.edges)<-NULL
+  ## Now, add the weight column to the data frame
+  all.edges <- data.frame(all.significant.filtered.ppi[, 1:2], "weight" = edge.weight)
+  # make the rownames null
+  rownames(all.edges) <- NULL
   ##
   #####
 
 
 
-  #####Now create a graph and generate the pathway paths
-  ##make the graph data frame from the "all.edges"
+  ##### Now create a graph and generate the pathway paths
+  ## make the graph data frame from the "all.edges"
   g1 <- graph.data.frame(d = all.edges, directed = TRUE)
   ##
 
-  ##Find all shortest paths for all source nodes ("RPs") to destination ("TFs")
-  ##Here by default uses the Dijkstra's algorithm for weighted directed graph
-  ll.all.path<-list()
-  for(i in 1:length(RPs)){
-    ll.all.path[[RPs[i]]]<-shortest_paths(g1, from=RPs[i], to = TFs, mode = "out")
+  ## Find all shortest paths for all source nodes ("RPs") to destination ("TFs")
+  ## Here by default uses the Dijkstra's algorithm for weighted directed graph
+  ll.all.path <- list()
+  for (i in 1:length(RPs)) {
+    ll.all.path[[RPs[i]]] <- shortest_paths(g1, from = RPs[i], to = TFs, mode = "out")
     print(i)
   }
   ##
 
-  ##Finding all the complete (RP-KN-...-KN-TF) paths
-  ##Here we considered for at least 3 layers and maximum 7 layers by default
-  ll.all.path.complete<-list()
-  for(i in 1:length(ll.all.path)){
-    #this tmp variable is used for all filtered paths for a pathway
-    tmp.individual.pathway.paths.clean.ind<-NULL
-    #this loop to check each individual path for a pathway
-    for(j in 1:length(ll.all.path[[i]]$vpath)){
-      if((length(unlist(ll.all.path[[i]]$vpath[j])) >= 3) & (length(unlist(ll.all.path[[i]]$vpath[j])) <= max.path.length))
-        tmp.individual.pathway.paths.clean.ind<-c(tmp.individual.pathway.paths.clean.ind, j)
+  ## Finding all the complete (RP-KN-...-KN-TF) paths
+  ## Here we considered for at least 3 layers and maximum 7 layers by default
+  ll.all.path.complete <- list()
+  for (i in 1:length(ll.all.path)) {
+    # this tmp variable is used for all filtered paths for a pathway
+    tmp.individual.pathway.paths.clean.ind <- NULL
+    # this loop to check each individual path for a pathway
+    for (j in 1:length(ll.all.path[[i]]$vpath)) {
+      if ((length(unlist(ll.all.path[[i]]$vpath[j])) >= 3) & (length(unlist(ll.all.path[[i]]$vpath[j])) <= max.path.length)) {
+        tmp.individual.pathway.paths.clean.ind <- c(tmp.individual.pathway.paths.clean.ind, j)
+      }
     }
-    #this combines all the filtered paths for a pathway to the respective pathway
-    ll.all.path.complete[[names(ll.all.path)[i]]]<-ll.all.path[[i]]$vpath[tmp.individual.pathway.paths.clean.ind]
+    # this combines all the filtered paths for a pathway to the respective pathway
+    ll.all.path.complete[[names(ll.all.path)[i]]] <- ll.all.path[[i]]$vpath[tmp.individual.pathway.paths.clean.ind]
   }
   ##
 
-  ##take only the pathways that have at least one complete path
-  ll.all.path.complete.exist<-list()
-  for(i in 1:length(ll.all.path.complete)){
-    if(length(ll.all.path.complete[[i]])!=0){
-      ll.all.path.complete.exist[[names(ll.all.path.complete)[i]]]<-ll.all.path.complete[[i]]
+  ## take only the pathways that have at least one complete path
+  ll.all.path.complete.exist <- list()
+  for (i in 1:length(ll.all.path.complete)) {
+    if (length(ll.all.path.complete[[i]]) != 0) {
+      ll.all.path.complete.exist[[names(ll.all.path.complete)[i]]] <- ll.all.path.complete[[i]]
     }
   }
   ##
 
-  ##get only the pathway path elements, i.e., the names
-  pathway.path.all<-list()
-  for(i in 1:length(ll.all.path.complete.exist)){
-    tmp.pathway.path<-lapply(ll.all.path.complete.exist[[i]], function(x){return(names(x))})
-    pathway.path.all[[names(ll.all.path.complete.exist)[i]]]<-tmp.pathway.path
+  ## get only the pathway path elements, i.e., the names
+  pathway.path.all <- list()
+  for (i in 1:length(ll.all.path.complete.exist)) {
+    tmp.pathway.path <- lapply(ll.all.path.complete.exist[[i]], function(x) {
+      return(names(x))
+    })
+    pathway.path.all[[names(ll.all.path.complete.exist)[i]]] <- tmp.pathway.path
   }
   ##
   #####
 
 
 
-  #####This section is for removing the paths where all elements are housekeeping genes
-  ##get the pathway paths in which all elements are not hk genes
-  pathway.path.specific<-list()
-  for(i in 1:length(pathway.path.all)){
-    tmp.path.spec<-lapply(pathway.path.all[[i]], function(x){
-      if(!(all(x %in% housekeeping.gene == "TRUE")))
+  ##### This section is for removing the paths where all elements are housekeeping genes
+  ## get the pathway paths in which all elements are not hk genes
+  pathway.path.specific <- list()
+  for (i in 1:length(pathway.path.all)) {
+    tmp.path.spec <- lapply(pathway.path.all[[i]], function(x) {
+      if (!(all(x %in% housekeeping.gene == "TRUE"))) {
         return(x)
+      }
     })
-    pathway.path.specific[[names(pathway.path.all)[i]]]<-tmp.path.spec
+    pathway.path.specific[[names(pathway.path.all)[i]]] <- tmp.path.spec
   }
   ##
 
-  ##take only the existing pathway paths without null paths
-  pathway.path.specific.clean<-lapply(pathway.path.specific, function(x){
+  ## take only the existing pathway paths without null paths
+  pathway.path.specific.clean <- lapply(pathway.path.specific, function(x) {
     return(x[!(sapply(x, is.null))])
   })
   ##
 
-  ##take only the pathways that have at least one path
-  pathway.path.specific.clean.2<-list()
-  for(i in 1:length(pathway.path.specific.clean)){
-    if(length(pathway.path.specific.clean[[i]])!=0){
-      pathway.path.specific.clean.2[[names(pathway.path.specific.clean)[i]]]<-pathway.path.specific.clean[[i]]
+  ## take only the pathways that have at least one path
+  pathway.path.specific.clean.2 <- list()
+  for (i in 1:length(pathway.path.specific.clean)) {
+    if (length(pathway.path.specific.clean[[i]]) != 0) {
+      pathway.path.specific.clean.2[[names(pathway.path.specific.clean)[i]]] <- pathway.path.specific.clean[[i]]
     }
   }
   ##
 
-  ##Finally return the pathway.path.specific.clean.2 data
-  ##This data will be used as background pathway path data
+  ## Finally return the pathway.path.specific.clean.2 data
+  ## This data will be used as background pathway path data
   return(pathway.path.specific.clean.2)
   ##
   #####
 }
 ################################################################################################
-
-
-
-
-
