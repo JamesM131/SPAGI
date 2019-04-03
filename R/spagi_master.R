@@ -671,6 +671,7 @@ display_pathway_ranking_metric <- function(pathway.ranking.metric) {
 get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species, score = 700) {
   ## get ppi interactions for molecules
   if (species == "mmusculus") {
+    fs::dir_create("stringdb_mouse")
     # initiate the connection, id  10090 for mouse
     string_db_mouse <- STRINGdb$new(version = "10", species = 10090, score_threshold = 0, input_directory = "stringdb_mouse")
     # now combine all the protein
@@ -685,6 +686,7 @@ get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species, s
     all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
   }
   else if (species == "hsapiens") {
+    fs::dir_create("stringdb_human")
     # initiate the connection, id  9606 for human
     string_db_human <- STRINGdb$new(version = "10", species = 9606, score_threshold = 0, input_directory = "stringdb_human")
     # now combine all the protein and make uppercase
@@ -699,8 +701,7 @@ get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species, s
     all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
   }
   else {
-    print("ERROR: Do not support other species at this moment.")
-    return(NULL)
+    stop("Do not support other species at this moment.")
   }
   ##
 
@@ -1000,6 +1001,7 @@ generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length
   ## Here by default uses the Dijkstra's algorithm for weighted directed graph
   ll.all.path <- list()
   for (i in 1:length(RPs)) {
+    browser()
     ll.all.path[[RPs[i]]] <- shortest_paths(g1, from = RPs[i], to = TFs, mode = "out")
     print(i)
   }
