@@ -14,7 +14,7 @@
 #' @param RP.protein A vector containg the receptor (RP) proteins.
 #' @param KN.protein A vector containg the kinase (KN) proteins.
 #' @param TF.protein A vector containg the transcription factor (TF) proteins.
-#' @param species The species name, either "hsapiens" or "mmusculus".
+#' @param species The species name, either "hsapiens" or "mmusculus". This will default to hsapiens.
 #' @param score An interger value for the STRINGdb PPI score threshold cutoff.
 #'   Default is 700.
 #'
@@ -31,7 +31,7 @@
 #' ## Get PPI data for the protein molecules of species "mmusculus".
 #' mm.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "mmusculus")
 #' head(mm.ppi)
-get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species, score = 700) {
+get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species = "hsapiens", score = 700) {
   ## get ppi interactions for molecules
   if (species == "mmusculus") {
     fs::dir_create("stringdb_mouse")
