@@ -17,6 +17,7 @@
 #' @param species The species name, either "hsapiens" or "mmusculus". This will default to hsapiens.
 #' @param score An interger value for the STRINGdb PPI score threshold cutoff.
 #'   Default is 700.
+#' @param overwrite Whether or not to overwite cached data. Defaults to TRUE.
 #'
 #' @importFrom STRINGdb STRINGdb
 #'
@@ -31,43 +32,55 @@
 #' ## Get PPI data for the protein molecules of species "mmusculus".
 #' mm.ppi <- get_ppi_for_molecules(RP.protein, KN.protein, TF.protein, species = "mmusculus")
 #' head(mm.ppi)
-get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species = "hsapiens", score = 700) {
+get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species = "hsapiens", score = 700, overwrite = FALSE) {
   ## get ppi interactions for molecules
   if (species == "mmusculus") {
-    browser()
-    fs::dir_create("stringdb_mouse")
-    # initiate the connection, id  10090 for mouse
-    string_db_mouse <- STRINGdb$new(version = "10", species = 10090, score_threshold = 0, input_directory = "stringdb_mouse")
+    
     # now combine all the protein
     all.protein <- unique(c(RP.protein, KN.protein, TF.protein))
     # make a data frame from all the protein
     all.protein.df <- data.frame("gene" = all.protein)
-    # mapping gene names to string ids
-    all.protein.mapped <- string_db_mouse$map(all.protein.df, "gene", takeFirst = T, removeUnmappedRows = TRUE)
-    # get interactions information
-    all.protein.mapped.interactions <- string_db_mouse$get_interactions(all.protein.mapped$STRING_id)
-    # get only interactions and score
-    all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
+    
+    if((!fs::dir_exists("stringdb_mouse")) || overwrite){
+      fs::dir_create("stringdb_mouse")
+      # initiate the connection, id  10090 for mouse
+      string_db_mouse <- STRINGdb$new(version = "10", species = 10090, score_threshold = 0, input_directory = "stringdb_mouse")
+      # mapping gene names to string ids
+      all.protein.mapped <- string_db_mouse$map(all.protein.df, "gene", takeFirst = T, removeUnmappedRows = TRUE)
+      # get interactions information
+      all.protein.mapped.interactions <- string_db_mouse$get_interactions(all.protein.mapped$STRING_id)
+      
+      save(file = "stringdb_mouse/cached_data.rda", all.protein.mapped, all.protein.mapped.interactions)
+    } else {
+      load("stringdb_mouse/cached_data.rda")
+    }
   }
   else if (species == "hsapiens") {
-    fs::dir_create("stringdb_human")
-    # initiate the connection, id  9606 for human
-    string_db_human <- STRINGdb$new(version = "10", species = 9606, score_threshold = 0, input_directory = "stringdb_human")
     # now combine all the protein and make uppercase
     all.protein <- toupper(unique(c(RP.protein, KN.protein, TF.protein)))
     # make a data frame from all the protein
     all.protein.df <- data.frame("gene" = all.protein)
-    # mapping gene names to string ids
-    all.protein.mapped <- string_db_human$map(all.protein.df, "gene", takeFirst = T, removeUnmappedRows = TRUE)
-    # get interactions information
-    all.protein.mapped.interactions <- string_db_human$get_interactions(all.protein.mapped$STRING_id)
-    # get only interactions and score
-    all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
+    
+    if((!fs::dir_exists("stringdb_human")) || overwrite) {
+      fs::dir_create("stringdb_human")
+      # initiate the connection, id  9606 for human
+      string_db_human <- STRINGdb$new(version = "10", species = 9606, score_threshold = 0, input_directory = "stringdb_human")
+      # mapping gene names to string ids
+      all.protein.mapped <- string_db_human$map(all.protein.df, "gene", takeFirst = T, removeUnmappedRows = TRUE)
+      # get interactions information
+      all.protein.mapped.interactions <- string_db_human$get_interactions(all.protein.mapped$STRING_id)
+      save(file = "stringdb_human/cached_data.rda", all.protein.mapped, all.protein.mapped.interactions)
+    } else {
+      load("stringdb_human/cached_data.rda")
+    }
   }
   else {
     stop("Do not support other species at this moment.")
   }
   ##
+  
+  # get only interactions and score
+  all.protein.mapped.interactions.score <- all.protein.mapped.interactions[, c(1, 2, 16)]
   
   
   ## from STRING_id to gene name conversion
