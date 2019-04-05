@@ -1,7 +1,7 @@
 # find k shortest paths
 k.shortest.paths <- function(graph, from, to, k){
   # first shortest path
-  k0 <- get.shortest.paths(graph,from,to, output='both')
+  k0 <- shortest_paths(graph, from, to, mode = "out", output = 'both')
   
   # number of currently found shortest paths
   kk <- 1

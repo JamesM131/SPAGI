@@ -34,6 +34,7 @@
 get_ppi_for_molecules <- function(RP.protein, KN.protein, TF.protein, species = "hsapiens", score = 700) {
   ## get ppi interactions for molecules
   if (species == "mmusculus") {
+    browser()
     fs::dir_create("stringdb_mouse")
     # initiate the connection, id  10090 for mouse
     string_db_mouse <- STRINGdb$new(version = "10", species = 10090, score_threshold = 0, input_directory = "stringdb_mouse")
