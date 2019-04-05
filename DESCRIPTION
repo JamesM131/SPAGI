@@ -6,7 +6,11 @@ Author: Md Humayun Kabir
 Maintainer: Md Humayun Kabir <humayun.mkabir@gmail.com>
 Description: SPAGI is an R package for active pathway identification for RNA-seq gene expression profiles.
 Depends: R (>= 3.3.2)
-Imports: data.table, STRINGdb, igraph
+Imports: 
+    data.table,
+    STRINGdb,
+    igraph,
+    fs
 License: GPL-3
 Encoding: UTF-8
 LazyData: true
