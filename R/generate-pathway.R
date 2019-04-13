@@ -52,7 +52,7 @@ generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length
   ##### preprocess the ppi.result data
   ## Assign the result data to the objects
   all.significant.filtered.ppi <- ppi.result$PPI
-  RPs <- ppi.result$RPs[1:20]
+  RPs <- ppi.result$RPs
   TFs <- ppi.result$TFs
   ##
   
@@ -82,14 +82,6 @@ generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length
   ## Here by default uses the Dijkstra's algorithm for weighted directed graph
   ll.all.path <- list()
   for (i in 1:length(RPs)) {
-    # browser()
-    
-    # if(num_paths != 1) {
-    #   ll.all.path[[RPs[i]]] <- k_shortest_yen(g1, src = RPs[i], dest = TFs, k = num_paths)
-    #   
-    # }
-    
-    # ll.all.path[[RPs[i]]] <- shortest_paths(g1, from = RPs[i], to = TFs, mode = "out")
     ll.all.path[[RPs[i]]] <- k_shortest_yen(g1, src = RPs[i], dest = TFs, k = num_paths)
     print(i)
   }
@@ -106,72 +98,7 @@ generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length
     flatten() %>% 
     unname()
   
-  # ll.all.path.complete <- list()
-  # for (i in 1:length(ll.all.path)) {
-  #   # this tmp variable is used for all filtered paths for a pathway
-  #   tmp.individual.pathway.paths.clean.ind <- NULL
-  #   # this loop to check each individual path for a pathway
-  #   for (j in 1:length(ll.all.path[[i]]$vpath)) {
-  #     if ((length(unlist(ll.all.path[[i]]$vpath[j])) >= 3) & (length(unlist(ll.all.path[[i]]$vpath[j])) <= max.path.length)) {
-  #       tmp.individual.pathway.paths.clean.ind <- c(tmp.individual.pathway.paths.clean.ind, j)
-  #     }
-  #   }
-  #   # this combines all the filtered paths for a pathway to the respective pathway
-  #   ll.all.path.complete[[names(ll.all.path)[i]]] <- ll.all.path[[i]]$vpath[tmp.individual.pathway.paths.clean.ind]
-  # }
-  # 
-  # 
-  # ##
-  # 
-  # ## take only the pathways that have at least one complete path
-  # ll.all.path.complete.exist <- list()
-  # for (i in 1:length(ll.all.path.complete)) {
-  #   if (length(ll.all.path.complete[[i]]) != 0) {
-  #     ll.all.path.complete.exist[[names(ll.all.path.complete)[i]]] <- ll.all.path.complete[[i]]
-  #   }
-  # }
-  # ##
-  # 
-  # ## get only the pathway path elements, i.e., the names
-  # pathway.path.all <- list()
-  # for (i in 1:length(ll.all.path.complete.exist)) {
-  #   tmp.pathway.path <- lapply(ll.all.path.complete.exist[[i]], function(x) {
-  #     return(names(x))
-  #   })
-  #   pathway.path.all[[names(ll.all.path.complete.exist)[i]]] <- tmp.pathway.path
-  # }
-  ##
-  #####
-  
-  
-  
-  ##### This section is for removing the paths where all elements are housekeeping genes
-  ## get the pathway paths in which all elements are not hk genes
-  # pathway.path.specific <- list()
-  # for (i in 1:length(pathway.path.all)) {
-  #   tmp.path.spec <- lapply(pathway.path.all[[i]], function(x) {
-  #     if (!(all(x %in% housekeeping.gene == "TRUE"))) {
-  #       return(x)
-  #     }
-  #   })
-  #   pathway.path.specific[[names(pathway.path.all)[i]]] <- tmp.path.spec
-  # }
-  
-  ## take only the existing pathway paths without null paths
-  # pathway.path.specific.clean <- lapply(pathway.path.specific, function(x) {
-  #   return(x[!(sapply(x, is.null))])
-  # })
-  ##
-  
-  ## take only the pathways that have at least one path
-  # pathway.path.specific.clean.2 <- list()
-  # for (i in 1:length(pathway.path.specific.clean)) {
-  #   if (length(pathway.path.specific.clean[[i]]) != 0) {
-  #     pathway.path.specific.clean.2[[names(pathway.path.specific.clean)[i]]] <- pathway.path.specific.clean[[i]]
-  #   }
-  # }
-  ##
-  
+
   pathway.path.specific.clean.2 <- pathway.path.all %>% 
     discard(~{
       all(.x %in% housekeeping.gene)
