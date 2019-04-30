@@ -86,13 +86,12 @@ generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length
     print(i)
   }
   ##
-  
+
   ## Finding all the complete (RP-KN-...-KN-TF) paths
   ## Here we considered for at least 3 layers and maximum 7 layers by default
-  # browser()
-  
+
   pathway.path.all <- map(ll.all.path, ~{
-    discard(.x, ~(length(.x) >= 3 & length(.x) <= max.path.length))
+    discard(.x, ~(length(.x) <= 3 || length(.x) >= max.path.length))
   }) %>% 
     compact() %>%
     flatten() %>% 
