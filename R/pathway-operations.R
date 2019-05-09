@@ -29,16 +29,21 @@
 #' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
 #' head(ROR1.active.pathway$ROR1_LEC$FGFR1)
 identify_active_pathway_path <- function(pathway.path, processed.query.data) {
+  
+  # browser()
   ## process separately for each cell or tissue type
   active_pathway_path <- lapply(processed.query.data, function(each.query.cell.exp.data) {
+    # browser()
     ## get the pathway paths in which all elements are expressed in query input data
     # each.cell.exp.gene.name<-names(each.query.cell.exp.data)
-    each.cell.exp.gene.name <- sort(names(each.query.cell.exp.data))
+    each.cell.exp.gene.name <- sort(names(each.query.cell.exp.data)) %>% stringr::str_to_upper()
     pathway.path.exist <- lapply(pathway.path, function(y) {
+      # browser()
       tmp.path.exist <- lapply(y, function(x) {
+        # browser()
         # for taking only the path where all molecules are expressed in gene expression data
         # if(all(unlist(x) %chin% each.cell.exp.gene.name == "TRUE")){
-        if (!(anyNA(chmatch(x, each.cell.exp.gene.name)))) {
+        if (!(anyNA(chmatch(x, each.cell.exp.gene.name)))) { # All proteins in the path are in the expression data
           return(x)
         }
       })
@@ -186,20 +191,36 @@ get_pathway_downstream_tf_number <- function(active.pathway.path) {
 
 #' @title get_pathway_ranking_metric
 #'
-#' @description
-#' This function generates pathway activity score and number of downstream transcription factors of the active pathways for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the activity score. However, it uses only the active pathway path data to calculate the number of downstream transcription factors.
+#' @description This function generates pathway activity score and number of
+#' downstream transcription factors of the active pathways for each cell/tissue
+#' type. It uses active pathway path and processed query data with a high
+#' expression threshold to generate the activity score. However, it uses only
+#' the active pathway path data to calculate the number of downstream
+#' transcription factors.
 #'
 #' @rdname get_pathway_ranking_metric
 #' @name get_pathway_ranking_metric
 #'
-#' @details
-#' This function generates pathway activity score and number of downstream transcription factors of the active pathways for each cell/tissue type. It uses active pathway path and processed query data with a high expression threshold to generate the activity score. However, it uses only the active pathway path data to calculate the number of downstream transcription factors.
+#' @details This function generates pathway activity score and number of
+#' downstream transcription factors of the active pathways for each cell/tissue
+#' type. It uses active pathway path and processed query data with a high
+#' expression threshold to generate the activity score. However, it uses only
+#' the active pathway path data to calculate the number of downstream
+#' transcription factors.
 #'
-#' @return This function returns a list of sublist with pathway activity score and the number of downstream transcription factors for each cell/tissue type.
+#' @return This function returns a list of sublist with pathway activity score
+#'   and the number of downstream transcription factors for each cell/tissue
+#'   type.
 #'
-#' @param active.pathway.path A list of active pathway path data for each cell/tissue type as returned by the function 'identify_active_pathway_path'.
-#' @param processed.query.data A list with expressed query data where each sublist corresponds for each cell/tissue type as returned by the function 'preprocess_querydata'.
-#' @param high.exp.th A high expression threshold value for the processed query data. It is used to get active (i.e., highly expressed) molecule proportion for each pathway path.
+#' @param active.pathway.path A list of active pathway path data for each
+#'   cell/tissue type as returned by the function
+#'   'identify_active_pathway_path'.
+#' @param processed.query.data A list with expressed query data where each
+#'   sublist corresponds for each cell/tissue type as returned by the function
+#'   'preprocess_querydata'.
+#' @param high.exp.th A high expression threshold value for the processed query
+#'   data. It is used to get active (i.e., highly expressed) molecule proportion
+#'   for each pathway path.
 #'
 #' @export
 #'
@@ -207,7 +228,7 @@ get_pathway_downstream_tf_number <- function(active.pathway.path) {
 #' ## Here we will use "pathway.path" as background data from the SPAGI repository.
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
-#' 
+#'
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
 #' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
