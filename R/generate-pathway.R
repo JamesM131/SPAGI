@@ -22,6 +22,7 @@
 #'   ENCODE human and mouse project.
 #' @param max.path.length An integer number indicating the maximum path length.
 #'   Default is 7.
+#' @param num_paths An integer representing how many paths to return for each R and TF 
 #'
 #' @importFrom igraph graph.data.frame shortest_paths
 #'
@@ -46,68 +47,49 @@
 #' ## Now combine and get the filtered PPI and the RP and TF proteins of the combined filtered PPI
 #' comb.ppi.result <- combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
 #' ## Generate the pathway path data using the comb.ppi.result and housekeeping.gene data sets
-#' pathway.path <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene, num_paths=2)
+#' pathway.path <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene)
 #' head(summary(pathway.path))
-generate_pathway_path <- function(ppi.result, housekeeping.gene, max.path.length = 7, num_paths = 1) {
-  ##### preprocess the ppi.result data
-  ## Assign the result data to the objects
-  all.significant.filtered.ppi <- ppi.result$PPI
-  RPs <- ppi.result$RPs
-  TFs <- ppi.result$TFs
+generate_pathway_path<-function(ppi.result, housekeeping.gene, max.path.length=7, num_paths = 1){
+  #####preprocess the ppi.result data
+  ##Assign the result data to the objects
+  all.significant.filtered.ppi<-ppi.result$PPI
+  RPs<-ppi.result$RPs
+  TFs<-ppi.result$TFs
   ##
   
-  ## NOTE
-  ## First, it is good to know that when looking up paths, igraph understands weights as costs,
-  ## i.e. on edges with higher weight it costs more to travel,
-  ## so it will consider shorter the paths with lower sum weight.
-  ## It is easy to turn this into the opposite, here we will do the score (range 0 to 999) as weight by 1000-score.
+  ##NOTE
+  ##First, it is good to know that when looking up paths, igraph understands weights as costs,
+  ##i.e. on edges with higher weight it costs more to travel,
+  ##so it will consider shorter the paths with lower sum weight.
+  ##It is easy to turn this into the opposite, here we will do the score (range 0 to 999) as weight by 1000-score.
   
-  ## First calculate the weight from the score as (1000-score)
-  edge.weight <- 1000 - all.significant.filtered.ppi$score
+  ##First calculate the weight from the score as (1000-score)
+  edge.weight<- 1000 - all.significant.filtered.ppi$score
   ##
   
-  ## Now, add the weight column to the data frame
-  all.edges <- data.frame(all.significant.filtered.ppi[, 1:2], "weight" = edge.weight)
-  # make the rownames null
-  rownames(all.edges) <- NULL
+  ##Now, add the weight column to the data frame
+  all.edges<-data.frame(all.significant.filtered.ppi[,1:2], "weight"=edge.weight)
+  #make the rownames null
+  rownames(all.edges)<-NULL
   ##
   #####
-  
-  ##### Now create a graph and generate the pathway paths
-  ## make the graph data frame from the "all.edges"
+  #####Now create a graph and generate the pathway paths
+  ##make the graph data frame from the "all.edges"
   g1 <- graph.data.frame(d = all.edges, directed = TRUE)
   ##
+  pb <- progress::progress_bar$new(total = length(RPs))
+  big_list <- RPs %>% 
+    map(~{
+      pb$tick()
+      k_shortest_yen(g1, src = .x, dest =  TFs, k = num_paths)
+    })
   
-  ## Find all shortest paths for all source nodes ("RPs") to destination ("TFs")
-  ## Here by default uses the Dijkstra's algorithm for weighted directed graph
-  ll.all.path <- list()
-  for (i in 1:length(RPs)) {
-    ll.all.path[[RPs[i]]] <- k_shortest_yen(g1, src = RPs[i], dest = TFs, k = num_paths)
-    print(i)
-  }
-  ##
-
-  ## Finding all the complete (RP-KN-...-KN-TF) paths
-  ## Here we considered for at least 3 layers and maximum 7 layers by default
-
-  pathway.path.all <- map(ll.all.path, ~{
-    discard(.x, ~(length(.x) <= 3 || length(.x) >= max.path.length))
-  }) %>% 
-    compact() %>%
+  # Flatten the list (removing two levels) and discard the 
+  big_list %>% 
     flatten() %>% 
-    unname()
-  
-
-  pathway.path.specific.clean.2 <- pathway.path.all %>% 
+    flatten() %>% 
+    discard(~(length(.x) < 3 || length(.x) > max.path.length)) %>% 
     discard(~{
       all(.x %in% housekeeping.gene)
-    }) %>% 
-    compact()
-  
-  
-  ## Finally return the pathway.path.specific.clean.2 data
-  ## This data will be used as background pathway path data
-  return(pathway.path.specific.clean.2)
-  ##
-  #####
+    })
 }

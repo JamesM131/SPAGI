@@ -3,9 +3,9 @@ library(tidyverse)
 
 #'@return the shortest path as a list of vertices or NULL if there is no path between src and dest
 shortest_path <- function(graph, src, dest){
-  path <- suppressWarnings(get.shortest.paths(graph, src, dest))
-  path <- names(path$vpath[[1]])
-  if (length(path)==1) NULL else path
+  path <- suppressWarnings(get.shortest.paths(graph, from = src, to = dest, mode = "out"))
+  path <- map(path$vpath, names)
+  if (length(path)==0) NULL else path
 } 
 
 #'@return the sum of the weights of all the edges in the given path
@@ -30,7 +30,8 @@ find_edges_to_delete <- function(A,i,rootPath){
 #returns the k shortest path from src to dest
 #sometimes it will return less than k shortest paths. This occurs when the max possible number of paths are less than k
 k_shortest_yen <- function(graph, src, dest, k){
-  if (src == dest) stop('src and dest can not be the same (currently)')
+  # browser()
+  if (identical(src, dest)) stop('src and dest can not be the same (currently)')
   
   #accepted paths
   A <- list(shortest_path(graph, src, dest))

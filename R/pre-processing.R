@@ -25,6 +25,7 @@
 #' colnames(query.data) <- c("cell1", "cell1", "cell1", "cell2", "cell2", "cell2", "cell3", "cell3", "cell3", "cell3")
 #' preprocess_querydata(cell.tissue.data = query.data, exp.cutoff.th = 5)
 preprocess_querydata <- function(cell.tissue.data, exp.cutoff.th, species = "hsapiens", data.format = "matrix", experiment.descriptor = NULL) {
+  # browser()
   if (data.format == "matrix") {
     ## to make all genes uppercase for mmusculus as PPI data are all uppercase
     if (species == "mmusculus") {
