@@ -85,10 +85,14 @@ generate_pathway_path<-function(ppi.result, housekeeping.gene, max.path.length=7
     })
   
   # Flatten the list (removing two levels) and discard the 
+  pb2 <- progress::progress_bar$new(total = length(flatten(flatten(big_list))))
   big_list %>% 
     flatten() %>% 
     flatten() %>% 
-    discard(~(length(.x) < 3 || length(.x) > max.path.length)) %>% 
+    discard(~{
+      pb2$tick()
+      (length(.x) < 3 || length(.x) > max.path.length)
+    }) %>% 
     discard(~{
       all(.x %in% housekeeping.gene)
     })
