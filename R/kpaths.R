@@ -19,7 +19,7 @@ find_edges_to_delete <- function(A,i,rootPath){
   edgesToDelete <- NULL
   for (p in A){
     rootPath_p <- p[1:i]
-    if (all(rootPath_p == rootPath)){
+    if (identical(rootPath_p, rootPath)){
       edge <- paste(p[i], ifelse(is.na(p[i+1]),p[i],p[i+1]), sep = '|')
       edgesToDelete[length(edgesToDelete)+1] <- edge
     }
@@ -30,11 +30,12 @@ find_edges_to_delete <- function(A,i,rootPath){
 #returns the k shortest path from src to dest
 #sometimes it will return less than k shortest paths. This occurs when the max possible number of paths are less than k
 k_shortest_yen <- function(graph, src, dest, k){
-  # browser()
+  browser()
   if (identical(src, dest)) stop('src and dest can not be the same (currently)')
   
   #accepted paths
-  A <- list(shortest_path(graph, src, dest))
+  # A <- list(shortest_path(graph, src, dest))
+  A <- shortest_path(graph, src, dest)
   if (k == 1) return (A)
   #potential paths
   B <- list()
