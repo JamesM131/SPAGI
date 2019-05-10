@@ -23,61 +23,42 @@
 #' ## Also we will use "ROR1.data" as query RNA-seq gene expression data. This data is for ocular lens epithelial cell differentiated from human pluripotent stem cells.
 #' ## These data sets are loaded automatically with the package.
 #' 
+#' 
+#' comb.ppi.result <- combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
+#' # Generate the pathway path data using the comb.ppi.result and housekeeping.gene data sets
+#' new_background_paths <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene)
+#' 
+#' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
 #' ROR1.processed.data <- preprocess_querydata(cell.tissue.data = ROR1.data, exp.cutoff.th = 1.8)
 #' ## Identify active pathway paths of the processed query data
-#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = pathway.path, processed.query.data = ROR1.processed.data)
+#' ROR1.active.pathway <- identify_active_pathway_path(pathway.path = new_background_paths, processed.query.data = ROR1.processed.data)
 #' head(ROR1.active.pathway$ROR1_LEC$FGFR1)
+
 identify_active_pathway_path <- function(pathway.path, processed.query.data) {
+  # A note on my (James) change here: 
+  # The previous version of this function exhibited an unexpected/undocumented
+  # behaviour in that it would return 1 list of active proteins for each column
+  # in the original (non-processed RNA data). An exception to this behaviour
+  # was when the columns were given the same name (as with the ROR1.data) in
+  # which only one list of proteins was returned. This new version of the
+  # function does not allow this silent combination (although as a result of
+  # this, some of the behaviours regarding the ROR1 example may change).
+
+  gene_names <- processed.query.data %>% 
+    map(~sort(stringr::str_to_upper(names(.x))))
   
-  # browser()
-  ## process separately for each cell or tissue type
-  active_pathway_path <- lapply(processed.query.data, function(each.query.cell.exp.data) {
-    # browser()
-    ## get the pathway paths in which all elements are expressed in query input data
-    # each.cell.exp.gene.name<-names(each.query.cell.exp.data)
-    each.cell.exp.gene.name <- sort(names(each.query.cell.exp.data)) %>% stringr::str_to_upper()
-    pathway.path.exist <- lapply(pathway.path, function(y) {
-      # browser()
-      tmp.path.exist <- lapply(y, function(x) {
-        # browser()
-        # for taking only the path where all molecules are expressed in gene expression data
-        # if(all(unlist(x) %chin% each.cell.exp.gene.name == "TRUE")){
-        if (!(anyNA(chmatch(x, each.cell.exp.gene.name)))) { # All proteins in the path are in the expression data
-          return(x)
-        }
-      })
-      return(tmp.path.exist)
+  pb <- progress::progress_bar$new(total = length(processed.query.data)*length(pathway.path))
+  
+  processed.query.data %>% 
+    map(~sort(stringr::str_to_upper(names(.x)))) %>% 
+    map(function(names){
+      pathway.path %>% 
+        keep(~{
+          pb$tick()
+          all(data.table::`%chin%`(.x, names))
+        })
     })
-    ##
-    
-    
-    ## take only the existing pathway paths without null paths
-    pathway.path.exist.clean <- lapply(pathway.path.exist, function(x) {
-      return(x[!(sapply(x, is.null))])
-    })
-    ##
-    
-    
-    ## take only the pathways that have at least one complete path
-    pathway.path.exist.clean.2 <- list()
-    for (i in 1:length(pathway.path.exist.clean)) {
-      if (length(pathway.path.exist.clean[[i]]) != 0) {
-        pathway.path.exist.clean.2[[names(pathway.path.exist.clean)[i]]] <- pathway.path.exist.clean[[i]]
-      }
-    }
-    ##
-    
-    
-    ## return the active pathway path for each cell or tissue
-    return(pathway.path.exist.clean.2)
-    ##
-  })
-  
-  
-  ## Finally return the whole result for active pathway path of every cell/tissue
-  return(active_pathway_path)
-  ##
 }
 
 
