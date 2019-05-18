@@ -1,6 +1,6 @@
 #function that loops through a nested list and gets the length of each set of elements in the list
 #Pathway is a list from the spagi library where each 
-distrpathlength <- function(pathway)
+distpathlength <- function(pathway)
 {
   myvector <- c()
   for(i in 1:length(pathway))
