@@ -26,7 +26,7 @@
 #' 
 #' comb.ppi.result <- combine_mm_hs_ppi(mm.ppi, hs.ppi, RP.protein, KN.protein, TF.protein)
 #' # Generate the pathway path data using the comb.ppi.result and housekeeping.gene data sets
-#' new_background_paths <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene)
+#' new_background_paths <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene, num_paths = 1)
 #' 
 #' 
 #' ## Pre-process the query data (ROR1.data), the data has already been made in CPM and log2 normalized format. Also we have already made the replicate names same for the data.
@@ -51,8 +51,8 @@ identify_active_pathway_path <- function(pathway.path, processed.query.data) {
   pb <- progress::progress_bar$new(total = length(processed.query.data)*length(pathway.path))
   
   processed.query.data %>% 
-    map(~sort(stringr::str_to_upper(names(.x)))) %>% 
-    map(function(names){
+    purrr::map(~sort(stringr::str_to_upper(names(.x)))) %>% 
+    purrr::map(function(names){
       pathway.path %>% 
         keep(~{
           pb$tick()

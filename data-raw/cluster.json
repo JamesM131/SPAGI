@@ -1,0 +1,24 @@
+{
+  "name": "New_Pool",
+  "vmSize": "Standard_D2_v2",
+  "maxTasksPerNode": 1,
+  "poolSize": {
+    "dedicatedNodes": {
+      "min": 1,
+      "max": 6
+    },
+    "lowPriorityNodes": {
+      "min": 3,
+      "max": 10
+    },
+    "autoscaleFormula": "QUEUE"
+  },
+  "containerImage": "rocker/tidyverse:latest",
+  "rPackages": {
+    "cran": ["igraph"],
+    "github": [],
+    "bioconductor": []
+  },
+  "commandLine": [],
+  "subnetId": ""
+}

@@ -12,6 +12,6 @@ data(pathway.path)
 Pathway path used as background data, generated using STRINGdb PPI.
 }
 \examples{
-head(summary(pathway.path)
+head(summary(pathway.path))
 }
 \keyword{datasets}

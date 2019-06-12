@@ -49,7 +49,8 @@
 #' ## Generate the pathway path data using the comb.ppi.result and housekeeping.gene data sets
 #' pathway.path <- generate_pathway_path(ppi.result = comb.ppi.result, housekeeping.gene)
 #' head(summary(pathway.path))
-generate_pathway_path<-function(ppi.result, housekeeping.gene, max.path.length=7, num_paths = 1){
+generate_pathway_path<-function(ppi.result, housekeeping.gene, max.path.length=7, num_paths = 2){
+  # browser()
   #####preprocess the ppi.result data
   ##Assign the result data to the objects
   all.significant.filtered.ppi<-ppi.result$PPI
@@ -70,30 +71,37 @@ generate_pathway_path<-function(ppi.result, housekeeping.gene, max.path.length=7
   ##Now, add the weight column to the data frame
   all.edges<-data.frame(all.significant.filtered.ppi[,1:2], "weight"=edge.weight)
   #make the rownames null
-  rownames(all.edges)<-NULL
+  rownames(all.edges) <- NULL
   ##
   #####
   #####Now create a graph and generate the pathway paths
   ##make the graph data frame from the "all.edges"
   g1 <- graph.data.frame(d = all.edges, directed = TRUE)
-  ##
+  # browser()
   pb <- progress::progress_bar$new(total = length(RPs))
   big_list <- RPs %>% 
     map(~{
+      # browser()
       pb$tick()
-      k_shortest_yen(g1, src = .x, dest =  TFs, k = num_paths)
+      k_shortest_paths(graph = g1, from = .x, to = TFs, k =  num_paths)
+      # k_shortest_yen(graph = g1, src = .x, dest =  TFs, k = `num_paths`)
     })
   
   # Flatten the list (removing two levels) and discard the 
   pb2 <- progress::progress_bar$new(total = length(flatten(flatten(big_list))))
-  big_list %>% 
+  # browser()
+  medium_list <- big_list %>% 
     flatten() %>% 
-    flatten() %>% 
+    # flatten() %>% 
     discard(~{
       pb2$tick()
-      (length(.x) < 3 || length(.x) > max.path.length)
-    }) %>% 
+      path_length <- length(.x)
+      path_length < 3 | path_length > max.path.length
+    })
+  pb3 <- progress::progress_bar$new(total = length(medium_list))
+  small_list <- medium_list %>% 
     discard(~{
-      all(.x %in% housekeeping.gene)
+      pb3$tick()
+      all(data.table::`%chin%`(.x, housekeeping.gene))
     })
 }
