@@ -1,0 +1,122 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+This is an [R Markdown](http://rmarkdown.rstudio.com) Notebook. When you execute code within the notebook, the results appear beneath the code. 
+
+Try executing this chunk by clicking the *Run* button within the chunk or by placing your cursor inside it and pressing *Ctrl+Shift+Enter*.
+
+```{r setup}
+
+library(spagi)
+library(tidyverse)
+```
+
+```{r}
+load("pathway.pathLEC.RData")
+LECpath <- pathway.path
+```
+
+
+```{r}
+#get and clean Hoang data
+hoangdata <- read.csv("Hoang_LEC_LF_expressed_MO'C edits.csv")
+hoangdata1 <- hoangdata[,1]
+hoangdata <- hoangdata[,2:4]
+rownames(hoangdata) <- hoangdata1
+
+
+```
+
+```{r}
+flatpaths <- LECpath 
+
+  for(i in 1:length(flatpaths))
+  {
+    for(j in 1:length(flatpaths[[i]]))
+    {
+    flatpaths[[i]] <- map(flatpaths[[i]],str_to_upper)
+  }
+  }
+
+```
+
+```{r}
+getridofhouskeepers <- function(pathway.path.all)
+{
+  pathway.path.specific<-list()
+  for(i in 1:length(pathway.path.all)){
+    tmp.path.spec<-lapply(pathway.path.all[[i]], function(x){
+      if(!(all(x %in% housekeeping.gene == "TRUE")))
+        return(x)
+    })
+    pathway.path.specific[[names(pathway.path.all)[i]]]<-tmp.path.spec
+  }
+  ##
+
+  ##take only the existing pathway paths without null paths
+  pathway.path.specific.clean<-lapply(pathway.path.specific, function(x){
+    return(x[!(sapply(x, is.null))])
+  })
+  ##
+
+  ##take only the pathways that have at least one path
+  pathway.path.specific.clean.2<-list()
+  for(i in 1:length(pathway.path.specific.clean)){
+    if(length(pathway.path.specific.clean[[i]])!=0){
+      pathway.path.specific.clean.2[[names(pathway.path.specific.clean)[i]]]<-pathway.path.specific.clean[[i]]
+    }
+  }
+  ##
+
+  ##take only the pathways that have at least one path
+  pathway.path.specific.clean.2<-list()
+  for(i in 1:length(pathway.path.specific.clean)){
+    if(length(pathway.path.specific.clean[[i]])!=0){
+      pathway.path.specific.clean.2[[names(pathway.path.specific.clean)[i]]]<-pathway.path.specific.clean[[i]]
+    }
+  }
+  ##
+
+  ##Finally return the pathway.path.specific.clean.2 data
+  ##This data will be used as background pathway path data
+  return(pathway.path.specific.clean.2)
+  
+  }
+
+```
+
+```{r}
+newhoang <- getridofhouskeepers(flatpaths)
+```
+
+```{r}
+#Spagi on Hoang
+
+hoang.processed.data<-preprocess_querydata(cell.tissue.data = hoangdata,
+                                           exp.cutoff.th = 3,
+                                           species = "mmusculus")
+
+
+hoang.active.pathwaynew <- identify_active_pathway_path(pathway.path = newhoang, processed.query.data = hoang.processed.data)
+```
+
+```{r}
+
+leclength <- distpathlength(hoang.active.pathwaynew$Hoang_LEC)
+
+commonlength <- distpathlength(hoang.active.pathwaynew$Difference)
+lfclength <- distpathlength(hoang.active.pathwaynew$Hoang_LFC)
+print(paste(length(leclength), length(commonlength), length(lfclength)))
+print(length(leclength) +length(commonlength) + length(lfclength))
+
+
+```
+
+
+Add a new chunk by clicking the *Insert Chunk* button on the toolbar or by pressing *Ctrl+Alt+I*.
+
+When you save the notebook, an HTML file containing the code and output will be saved alongside it (click the *Preview* button or press *Ctrl+Shift+K* to preview the HTML file).
+
+The preview shows you a rendered HTML copy of the contents of the editor. Consequently, unlike *Knit*, *Preview* does not run any R code chunks. Instead, the output of the chunk when it was last run in the editor is displayed.
